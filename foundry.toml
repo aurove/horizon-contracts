@@ -20,7 +20,8 @@ auto_detect_remappings = false
 remappings = [
   # Prefer the Foundry lib pin (v5.4.0). node_modules is an equivalent fallback at 5.4.0.
   "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
-  "forge-std/=lib/forge-std/src/"
+  "forge-std/=lib/forge-std/src/",
+  "erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/"
 ]
 fs_permissions = [{ access = "read", path = "./" }]
 

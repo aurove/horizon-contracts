@@ -9,5 +9,5 @@
     "resolveJsonModule": true,
     "types": ["node", "mocha"]
   },
-  "include": ["hardhat.config.ts", "deploy/**/*.ts", "test/hardhat/**/*.ts"]
+  "include": ["hardhat.config.ts", "deploy/**/*.ts", "helpers/**/*.ts", "test/hardhat/**/*.ts"]
 }
