@@ -1,0 +1,25 @@
+/cache
+/cache_forge
+/out
+/broadcast
+node_modules
+artifacts
+
+deployment-abis
+typechain
+typechain-types
+.openzeppelin
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+
+# Deployments (with exceptions)
+/deployments/*
+!/deployments/testnet/
+!/deployments/mainnet/
+
+# solidity-coverage
+/coverage
+/coverage.json
