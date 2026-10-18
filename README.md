@@ -57,6 +57,10 @@ MAINNET_RPC_URL=https://rpc-internal.mezo.org forge test --match-path 'test/fork
 
 Copy `.env.example` to `.env` for network keys and RPC URLs.
 
+## Cross-chain (NTT)
+
+Vault shares are plain ERC-20s intended for Wormhole NTT. Tooling lives in the sibling package [`@aurove/horizon-wormhole`](../wormhole) (`horizon/wormhole`): initialized `deployment.json` files for `avBTCv` / `avMEZOv`, hub Mezo (locking) → Base / BaseSepolia (burning).
+
 ## Deploy
 
 ```bash
