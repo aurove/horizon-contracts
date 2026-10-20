@@ -9,6 +9,7 @@ import "@openzeppelin/hardhat-upgrades";
 import "@typechain/hardhat";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
+import "./tasks/set-vault-peer-minter";
 
 const accounts = (key: string | undefined): string[] => (key ? [key] : []);
 
