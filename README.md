@@ -61,6 +61,8 @@ Copy `.env.example` to `.env` for network keys and RPC URLs.
 
 Vault shares are plain ERC-20s intended for Wormhole NTT. Tooling lives in the sibling package [`@aurove/horizon-wormhole`](../wormhole) (`horizon/wormhole`): initialized `deployment.json` files for `avBTCv` / `avMEZOv`, hub Mezo (locking) → Base / BaseSepolia (burning).
 
+`VaultPeer` is the spoke-side ERC-20 representation of a Mezo vault share. Configure `BASE_SEPOLIA_PRIVATE_KEY` / `BASE_PRIVATE_KEY` and the corresponding RPC URL, then deploy both peer tokens with `pnpm deploy:peer:testnet` or `pnpm deploy:peer:mainnet`. After deploying the corresponding NTT Manager in burning mode, the temporary owner must call `setMinter(nttManager)` once on each peer. That call permanently sets the minter and renounces token ownership in the same transaction. Verify the manager address before calling: it cannot be replaced afterward. Only the NTT Manager can mint inbound transfers or burn tokens held by the manager for outbound transfers. There is no public burn method; holders burn through NTT bridging.
+
 ## Deploy
 
 ```bash

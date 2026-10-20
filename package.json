@@ -13,6 +13,8 @@
     "deploy": "hardhat deploy",
     "deploy:factory": "hardhat deploy --tags VaultFactory",
     "deploy:vaults": "hardhat deploy --tags VaultFactory,Vaults",
+    "deploy:peer:testnet": "hardhat deploy --tags VaultPeers --network baseSepolia",
+    "deploy:peer:mainnet": "hardhat deploy --tags VaultPeers --network base",
     "deploy:reset": "hardhat deploy --network localhost --reset",
     "verify:testnet": "hardhat deploy --tags Verify --network testnet",
     "verify:mainnet": "hardhat deploy --tags Verify --network mainnet"

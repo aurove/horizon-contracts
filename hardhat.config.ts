@@ -98,6 +98,16 @@ const config: HardhatUserConfig = {
       chainId: 31612,
       accounts: accounts(process.env.MAINNET_PRIVATE_KEY),
     },
+    baseSepolia: {
+      url: process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org",
+      chainId: 84532,
+      accounts: accounts(process.env.BASE_SEPOLIA_PRIVATE_KEY),
+    },
+    base: {
+      url: process.env.BASE_RPC_URL ?? "https://mainnet.base.org",
+      chainId: 8453,
+      accounts: accounts(process.env.BASE_PRIVATE_KEY),
+    },
   },
   paths: { sources: "src", deploy: "deploy/scripts", deployments: "deployments" },
   typechain: { outDir: "typechain", target: "ethers-v6" },
