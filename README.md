@@ -10,6 +10,7 @@ This package (`@aurove/horizon-contracts`) mirrors Foundry + Hardhat tooling use
 |----------|------|
 | `Vault` | Immutable ERC-4626 vault over one Id20; `compound` / `harvestAndCompound` |
 | `VaultFactory` | Permissionless one-vault-per-asset registry (`createVault` / `getOrCreateVault`) |
+| `VaultPeer` | Base-side ERC-20 representation; the NTT Manager is the only minter and burner |
 
 Managed share defaults: **avBTCv** / **avMEZOv** over Id20 **avBTCm** / **avMEZOm**.
 
@@ -36,6 +37,7 @@ src/                 # Vault, VaultFactory, interfaces, vendor ABIs
 test/                # Forge unit, ERC-4626 properties, invariants
 test/fork/           # Mezo testnet fork coverage (needs RPC)
 deploy/scripts/      # hardhat-deploy
+tasks/               # Hardhat operational tasks, including one-time VaultPeer setup
 lib/                 # forge-std, openzeppelin-contracts
 docs/vault-design.md
 ```
@@ -61,7 +63,15 @@ Copy `.env.example` to `.env` for network keys and RPC URLs.
 
 Vault shares are plain ERC-20s intended for Wormhole NTT. Tooling lives in the sibling package [`@aurove/horizon-wormhole`](../wormhole) (`horizon/wormhole`): initialized `deployment.json` files for `avBTCv` / `avMEZOv`, hub Mezo (locking) → Base / BaseSepolia (burning).
 
-`VaultPeer` is the spoke-side ERC-20 representation of a Mezo vault share. Configure `BASE_SEPOLIA_PRIVATE_KEY` / `BASE_PRIVATE_KEY` and the corresponding RPC URL, then deploy both peer tokens with `pnpm deploy:peer:testnet` or `pnpm deploy:peer:mainnet`. After deploying the corresponding NTT Manager in burning mode, the temporary owner must call `setMinter(nttManager)` once on each peer. That call permanently sets the minter and renounces token ownership in the same transaction. Verify the manager address before calling: it cannot be replaced afterward. Only the NTT Manager can mint inbound transfers or burn tokens held by the manager for outbound transfers. There is no public burn method; holders burn through NTT bridging.
+`VaultPeer` is the Base-side ERC-20 representation of a Mezo vault share. The NTT Manager is its only minter and burner. There is no public burn method; outbound transfers are handled through NTT. The peer deployer is a temporary owner used only to set the minter; setting it permanently seals the minter and renounces ownership in the same transaction.
+
+The root `pnpm deploy:cross-chain:testnet` / `pnpm deploy:cross-chain:mainnet` workflow performs this handoff after configuring NTT. For a manual deployment, deploy the peer and NTT Manager first, verify the manager address, then run the registered Hardhat task from this package:
+
+```bash
+pnpm exec hardhat vault-peer:set-minter --network baseSepolia --peer <PEER_ADDRESS> --manager <NTT_MANAGER_ADDRESS>
+```
+
+Use `--network base` for Base mainnet. The task checks that the selected network is a Base spoke, that the signer is the temporary peer owner, and that no different minter has already been set. The handoff cannot be reversed.
 
 ## Deploy
 
