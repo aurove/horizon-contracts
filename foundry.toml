@@ -26,7 +26,7 @@ remappings = [
 fs_permissions = [{ access = "read", path = "./" }]
 
 [rpc_endpoints]
-mezo_testnet = "${TESTNET_RPC_URL}"
+mezo_testnet = "${MEZO_TESTNET_RPC_URL}"
 
 [etherscan]
 testnet = { key = "empty", chain = 31611, url = "https://api.explorer.test.mezo.org/api" }

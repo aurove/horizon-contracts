@@ -16,9 +16,7 @@ typechain-types
 *.log
 
 # Deployments (with exceptions)
-/deployments/*
-!/deployments/testnet/
-!/deployments/mainnet/
+/deployments/localhost
 
 # solidity-coverage
 /coverage

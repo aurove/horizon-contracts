@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { resolve } from "node:path";
+import { config as loadDotEnv } from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
@@ -10,6 +12,10 @@ import "@typechain/hardhat";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 import "./tasks/set-vault-peer-minter";
+
+// Support package commands that are run directly from contracts/, not only the
+// Horizon root orchestrator (which has already loaded the workspace .env).
+loadDotEnv({ path: resolve(__dirname, "../.env") });
 
 const accounts = (key: string | undefined): string[] => (key ? [key] : []);
 
@@ -25,7 +31,7 @@ const getOptionalBlockNumber = (value: string | undefined): number | undefined =
 /** Default fork target: Mezo testnet. Override with FORK_RPC_URL / FORK_BLOCK_NUMBER. */
 const hardhatForkRpcUrl =
   process.env.FORK_RPC_URL?.trim() ||
-  process.env.TESTNET_RPC_URL?.trim() ||
+  process.env.MEZO_TESTNET_RPC_URL?.trim() ||
   "https://rpc.test.mezo.org";
 const hardhatForkBlockNumber = getOptionalBlockNumber(process.env.FORK_BLOCK_NUMBER);
 
@@ -90,12 +96,12 @@ const config: HardhatUserConfig = {
     },
     localhost: { url: process.env.LOCALHOST_RPC_URL ?? "http://127.0.0.1:8545" },
     testnet: {
-      url: process.env.TESTNET_RPC_URL ?? "https://rpc.test.mezo.org",
+      url: process.env.MEZO_TESTNET_RPC_URL?.trim() || "https://rpc.test.mezo.org",
       chainId: 31611,
       accounts: accounts(process.env.TESTNET_PRIVATE_KEY),
     },
     mainnet: {
-      url: process.env.MAINNET_RPC_URL ?? "",
+      url: process.env.MEZO_MAINNET_RPC_URL?.trim() || "",
       chainId: 31612,
       accounts: accounts(process.env.MAINNET_PRIVATE_KEY),
     },
@@ -119,6 +125,8 @@ const config: HardhatUserConfig = {
     apiKey: {
       testnet: "empty",
       mainnet: "empty",
+      baseSepolia: process.env.BASESCAN_API_KEY ?? process.env.ETHERSCAN_API_KEY ?? "",
+      base: process.env.BASESCAN_API_KEY ?? process.env.ETHERSCAN_API_KEY ?? "",
     },
     customChains: [
       {

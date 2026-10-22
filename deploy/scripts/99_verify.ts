@@ -1,16 +1,49 @@
 import type { DeployFunction } from "hardhat-deploy/types";
 
-/**
- * Placeholder verify tag. Mezo Blockscout verification is submitted via hardhat-verify /
- * Sourcify v2 from ops scripts once addresses are live (same pattern as id20/core).
- */
 const func: DeployFunction = async (hre) => {
-  const factory = await hre.deployments.getOrNull("VaultFactory");
-  if (!factory) {
-    hre.deployments.log("VaultFactory not deployed; nothing to verify");
-    return;
+  const deployments = await hre.deployments.all();
+  const candidates = Object.entries(deployments).filter(([, deployment]) =>
+    Boolean(deployment.address && deployment.address !== hre.ethers.ZeroAddress),
+  );
+  if (candidates.length === 0) {
+    throw new Error(`No deployed contracts recorded for ${hre.network.name}`);
   }
-  hre.deployments.log(`VaultFactory at ${factory.address} — run hardhat verify manually or via Sourcify v2`);
+
+  for (const [name, deployment] of candidates) {
+    const source = deployment.linkedData as
+      | {
+          contractName?: string;
+          sourceName?: string;
+          asset?: string;
+          name?: string;
+          symbol?: string;
+        }
+      | undefined;
+    const contractName =
+      source?.contractName ??
+      (name.endsWith("Peer") ? "VaultPeer" : name.endsWith("Vault") ? "Vault" : name);
+    const artifact = await hre.deployments.getArtifact(contractName);
+    let constructorArguments = deployment.args ?? [];
+
+    // Vaults are created by VaultFactory, so their constructor args are kept in linkedData.
+    if (contractName === "Vault" && source?.asset && source.name && source.symbol) {
+      constructorArguments = [source.asset, source.name, source.symbol];
+    }
+
+    hre.deployments.log(`Verifying ${name} (${contractName}) at ${deployment.address}`);
+    await hre.run("verify:verify", {
+      address: deployment.address,
+      contract: `${artifact.sourceName}:${artifact.contractName}`,
+      constructorArguments,
+    }).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/already verified|already been verified/i.test(message)) {
+        hre.deployments.log(`${name} is already verified`);
+        return;
+      }
+      throw error;
+    });
+  }
 };
 
 func.tags = ["Verify"];

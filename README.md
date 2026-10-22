@@ -54,7 +54,7 @@ pnpm test
 Fork tests (optional; mainnet ABI — testnet gauges still use legacy `accountMetadata`):
 
 ```bash
-MAINNET_RPC_URL=https://rpc-internal.mezo.org forge test --match-path 'test/fork/*' -vv
+MEZO_MAINNET_RPC_URL=https://rpc-internal.mezo.org forge test --match-path 'test/fork/*' -vv
 ```
 
 Copy `.env.example` to `.env` for network keys and RPC URLs.
@@ -85,11 +85,40 @@ Managed vault scripts:
 2. Seed `1e12` Id20 and transfer shares to `0x…dEaD` only if `balanceOf(DEAD) == 0`.
 3. Skip seed when the deployer lacks Id20 balance.
 
+### Fresh contract redeployment
+
+The package reset workflows mirror `hardhat deploy --reset`: they delete the local deployment records for the selected Mezo and Base networks, then deploy a fresh factory, vaults, and peers. Existing contracts cannot be deleted from a chain; the new records point to new addresses, while previous deployments remain live at their prior addresses.
+
+```bash
+CONFIRM_CONTRACTS_REDEPLOYMENT=YES pnpm redeploy:testnet
+```
+
+For mainnet, also set `CONFIRM_HORIZON_MAINNET_DEPLOYMENT=YES`:
+
+```bash
+CONFIRM_CONTRACTS_REDEPLOYMENT=YES CONFIRM_HORIZON_MAINNET_DEPLOYMENT=YES pnpm redeploy:mainnet
+```
+
+The Horizon root workflow invokes these commands automatically. For a complete cross-chain redeployment, use `pnpm redeploy:cross-chain:testnet` or `pnpm redeploy:cross-chain:mainnet` from the workspace root so the fresh NTT managers and peer minters are configured against the new addresses.
+
+### Contract verification
+
+Verification is available for each deployed network and runs by default after deployment and fresh redeployment. The `Verify` deployment tag submits every recorded contract with its constructor arguments, including factory-created vaults:
+
+```bash
+pnpm run verify:testnet
+pnpm run verify:base-sepolia
+pnpm run verify:mainnet
+pnpm run verify:base
+```
+
+Mezo uses its public Blockscout-compatible API. Base and Base Sepolia verification needs `BASESCAN_API_KEY` (or `ETHERSCAN_API_KEY`) in the environment.
+
 ## Networks
 
 | Network | Chain ID | Default RPC |
 |---------|----------|-------------|
 | Mezo testnet | `31611` | `https://rpc.test.mezo.org` |
-| Mezo mainnet | `31612` | set `MAINNET_RPC_URL` |
+| Mezo mainnet | `31612` | set `MEZO_MAINNET_RPC_URL` |
 
 Optional Hardhat forking: set `FORK_ENABLED=1` (and optionally `FORK_RPC_URL` / `FORK_BLOCK_NUMBER`).

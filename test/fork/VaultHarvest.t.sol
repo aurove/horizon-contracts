@@ -10,7 +10,7 @@ import {IAuroveId20} from "../../src/vendor/aurove/interfaces/IAuroveId20.sol";
 import {IId20Gauge} from "../../src/vendor/aurove/interfaces/IId20Gauge.sol";
 
 /// @notice Mezo mainnet fork: deploy vault over live Id20 and exercise harvest/compound.
-/// @dev Prefers MAINNET_RPC_URL. Skips when the RPC/fork is unavailable.
+/// @dev Prefers MEZO_MAINNET_RPC_URL. Skips when the RPC/fork is unavailable.
 ///      Testnet gauges still expose legacy `accountMetadata` and are not targeted here;
 ///      vendor ABIs match current id20 source / mainnet (`accountState`).
 contract VaultHarvestForkTest is Test {
@@ -24,7 +24,7 @@ contract VaultHarvestForkTest is Test {
     bool internal forkReady;
 
     function setUp() public {
-        string memory rpc = vm.envOr("MAINNET_RPC_URL", DEFAULT_RPC);
+        string memory rpc = vm.envOr("MEZO_MAINNET_RPC_URL", DEFAULT_RPC);
         try vm.envUint("FORK_BLOCK") returns (uint256 blockNumber) {
             vm.createSelectFork(rpc, blockNumber);
         } catch {

@@ -15,9 +15,13 @@
     "deploy:vaults": "hardhat deploy --tags VaultFactory,Vaults",
     "deploy:peer:testnet": "hardhat deploy --tags VaultPeers --network baseSepolia",
     "deploy:peer:mainnet": "hardhat deploy --tags VaultPeers --network base",
+    "redeploy:testnet": "bash scripts/redeploy.sh testnet",
+    "redeploy:mainnet": "bash scripts/redeploy.sh mainnet",
     "deploy:reset": "hardhat deploy --network localhost --reset",
     "verify:testnet": "hardhat deploy --tags Verify --network testnet",
-    "verify:mainnet": "hardhat deploy --tags Verify --network mainnet"
+    "verify:base-sepolia": "hardhat deploy --tags Verify --network baseSepolia",
+    "verify:mainnet": "hardhat deploy --tags Verify --network mainnet",
+    "verify:base": "hardhat deploy --tags Verify --network base"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",
