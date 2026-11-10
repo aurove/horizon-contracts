@@ -2,6 +2,7 @@
   "name": "@aurove/horizon-contracts",
   "version": "0.0.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "build": "forge build && hardhat compile",
     "compile": "hardhat compile",
