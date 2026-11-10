@@ -8,6 +8,7 @@ import {IId20Gauge} from "../../src/vendor/aurove/interfaces/IId20Gauge.sol";
 import {IId20RewardsSink} from "../../src/vendor/aurove/interfaces/IId20RewardsSink.sol";
 
 /// @dev Simplified gauge: activation tracking + settable claimable balances for vault tests.
+///      Optionally reverts `accountState` so Vault's legacy `accountMetadata` fallback can be exercised.
 contract MockId20Gauge is IId20Gauge, IId20RewardsSink {
     using SafeERC20 for IERC20;
 
@@ -15,20 +16,60 @@ contract MockId20Gauge is IId20Gauge, IId20RewardsSink {
 
     mapping(address => bool) public activated;
     mapping(address => uint256) public claimable;
+    /// @dev Distinct from `claimable`/`earned` so tests can prove Vault maps earned -> claimableReward
+    ///      (same as scripts/lib/id20-gauge-compat.ts `mapAccountMetadataToState`).
+    mapping(address => uint256) public accruedReward;
     uint256 public rewardReserve;
+    /// @dev When true, `accountState` reverts so callers exercise the legacy metadata path.
+    bool public revertAccountState;
+    /// @dev When true, `accountMetadata` reverts (both-views-fail soft-zero path).
+    bool public revertAccountMetadata;
 
     error AlreadyActive(address account);
     error NotInitialized(address account);
     error NoRewards();
     error ZeroReceiver();
+    error AccountStateUnavailable();
+    error AccountMetadataUnavailable();
 
     constructor(IERC20 id20_) {
         id20 = id20_;
     }
 
+    function setRevertAccountState(bool value) external {
+        revertAccountState = value;
+    }
+
+    function setRevertAccountMetadata(bool value) external {
+        revertAccountMetadata = value;
+    }
+
+    function setAccruedReward(address account, uint256 amount) external {
+        accruedReward[account] = amount;
+    }
+
     function accountState(address account) external view returns (AccountState memory state) {
+        if (revertAccountState) revert AccountStateUnavailable();
         state.isActivated = activated[account];
         state.claimableReward = claimable[account];
+    }
+
+    /// @dev Legacy testnet shape; Vault / id20-gauge-compat map `earned` -> claimableReward (not accruedReward).
+    function accountMetadata(address account)
+        external
+        view
+        returns (
+            bool isActive,
+            uint256, /* weight */
+            uint256, /* debt */
+            uint256, /* credit */
+            uint256, /* lent */
+            uint256 accrued,
+            uint256 earned
+        )
+    {
+        if (revertAccountMetadata) revert AccountMetadataUnavailable();
+        return (activated[account], 0, 0, 0, 0, accruedReward[account], claimable[account]);
     }
 
     function activate() external {

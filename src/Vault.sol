@@ -12,6 +12,25 @@ import {IAuroveId20} from "./vendor/aurove/interfaces/IAuroveId20.sol";
 import {IId20Gauge} from "./vendor/aurove/interfaces/IId20Gauge.sol";
 import {IId20RewardsSink} from "./vendor/aurove/interfaces/IId20RewardsSink.sol";
 
+/// @dev Mezo testnet Id20 gauges still expose legacy `accountMetadata` (earned) instead of
+///      `accountState` (claimableReward). Used only as a view fallback in {Vault.claimableRewards}.
+interface ILegacyId20Gauge {
+    struct AccountMetadata {
+        bool isActive;
+        uint256 weight;
+        uint256 debt;
+        uint256 credit;
+        uint256 lent;
+        uint256 accruedReward;
+        uint256 earned;
+    }
+
+    function accountMetadata(address account)
+        external
+        view
+        returns (AccountMetadata memory metadata);
+}
+
 /// @title Vault - ERC-4626 vault over one Id20 with permissionless gauge compounding
 /// @notice Shares appreciate when attributable Id20Gauge rewards are claimed into the vault balance.
 /// @dev Unclaimed gauge rewards are excluded from `totalAssets`. Constructor self-activates on the
@@ -42,8 +61,22 @@ contract Vault is ERC4626, ReentrancyGuard, IVault {
     }
 
     /// @inheritdoc IVault
+    /// @dev Prefer `accountState.claimableReward` (mainnet / current ABI); fall back to legacy
+    ///      `accountMetadata.earned` when `accountState` is missing or reverts (Mezo testnet).
+    ///      Soft-returns 0 if both views fail so {harvestAndCompound} stays tolerant (compound=0)
+    ///      instead of reverting the whole call on a transient gauge view failure.
     function claimableRewards() public view returns (uint256) {
-        return gauge.accountState(address(this)).claimableReward;
+        try gauge.accountState(address(this)) returns (IId20Gauge.AccountState memory state) {
+            return state.claimableReward;
+        } catch {
+            try ILegacyId20Gauge(address(gauge)).accountMetadata(address(this)) returns (
+                ILegacyId20Gauge.AccountMetadata memory meta
+            ) {
+                return meta.earned;
+            } catch {
+                return 0;
+            }
+        }
     }
 
     /// @inheritdoc IVault
