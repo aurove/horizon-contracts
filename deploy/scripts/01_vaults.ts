@@ -53,10 +53,17 @@ const func: DeployFunction = async (hre) => {
     const id20 = IERC20__factory.connect(asset, signer);
     const balance = await id20.balanceOf(deployer);
     if (balance < SEED_ASSETS) {
-      hre.deployments.log(
-        `Skipping seed for ${spec.deploymentName}: deployer Id20 balance ${balance} < ${SEED_ASSETS}`,
+      if (process.env.ALLOW_UNSEEDED_VAULT === "1") {
+        hre.deployments.log(
+          `Skipping seed for ${spec.deploymentName}: deployer Id20 balance ${balance} < ${SEED_ASSETS} (ALLOW_UNSEEDED_VAULT=1)`,
+        );
+        continue;
+      }
+      throw new Error(
+        `Cannot seed ${spec.deploymentName}: deployer Id20 balance ${balance} < ${SEED_ASSETS}. ` +
+          `Vault may already be saved/created unseeded; fund the deployer and re-run to seed dead shares, ` +
+          `or set ALLOW_UNSEEDED_VAULT=1 to bypass.`,
       );
-      continue;
     }
 
     const allowance = await id20.allowance(deployer, vaultAddr);
