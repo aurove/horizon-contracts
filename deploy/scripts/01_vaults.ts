@@ -61,7 +61,8 @@ const func: DeployFunction = async (hre) => {
       }
       throw new Error(
         `Cannot seed ${spec.deploymentName}: deployer Id20 balance ${balance} < ${SEED_ASSETS}. ` +
-          `Fund the deployer or set ALLOW_UNSEEDED_VAULT=1 to bypass.`,
+          `Vault may already be saved/created unseeded; fund the deployer and re-run to seed dead shares, ` +
+          `or set ALLOW_UNSEEDED_VAULT=1 to bypass.`,
       );
     }
 

@@ -63,6 +63,8 @@ contract Vault is ERC4626, ReentrancyGuard, IVault {
     /// @inheritdoc IVault
     /// @dev Prefer `accountState.claimableReward` (mainnet / current ABI); fall back to legacy
     ///      `accountMetadata.earned` when `accountState` is missing or reverts (Mezo testnet).
+    ///      Soft-returns 0 if both views fail so {harvestAndCompound} stays tolerant (compound=0)
+    ///      instead of reverting the whole call on a transient gauge view failure.
     function claimableRewards() public view returns (uint256) {
         try gauge.accountState(address(this)) returns (IId20Gauge.AccountState memory state) {
             return state.claimableReward;

@@ -30,15 +30,18 @@ contract VaultLegacyClaimableTest is Test {
     }
 
     function test_claimableRewards_fallsBackToAccountMetadataEarned() public {
-        uint256 amount = 25e18;
-        id20.mint(address(gauge), amount);
-        gauge.fundClaimable(address(vault), amount);
+        uint256 earned = 25e18;
+        uint256 accrued = 99e18;
+        id20.mint(address(gauge), earned);
+        gauge.fundClaimable(address(vault), earned);
+        gauge.setAccruedReward(address(vault), accrued);
 
-        assertEq(vault.claimableRewards(), amount, "accountState path");
+        assertEq(vault.claimableRewards(), earned, "accountState path");
 
         gauge.setRevertAccountState(true);
-        assertEq(vault.claimableRewards(), amount, "legacy accountMetadata.earned path");
-        assertEq(vault.previewCompound(), amount);
+        assertEq(vault.claimableRewards(), earned, "legacy earned, not accruedReward");
+        assertEq(vault.previewCompound(), earned);
+        assertTrue(accrued != earned, "distinct accrued vs earned");
     }
 
     function test_compound_worksWhenOnlyLegacyMetadataReadable() public {
@@ -55,13 +58,18 @@ contract VaultLegacyClaimableTest is Test {
         assertEq(vault.claimableRewards(), 0);
     }
 
-    function test_claimableRewards_prefersAccountStateWhenAvailable() public {
-        uint256 amount = 7e18;
-        id20.mint(address(gauge), amount);
-        gauge.fundClaimable(address(vault), amount);
+    function test_claimableRewards_returnsZeroWhenBothViewsFail() public {
+        id20.mint(address(gauge), 5e18);
+        gauge.fundClaimable(address(vault), 5e18);
+        gauge.setRevertAccountState(true);
+        gauge.setRevertAccountMetadata(true);
 
-        assertFalse(gauge.revertAccountState());
-        assertEq(vault.claimableRewards(), amount);
-        assertEq(vault.previewCompound(), amount);
+        assertEq(vault.claimableRewards(), 0);
+        assertEq(vault.previewCompound(), 0);
+
+        (uint256 harvested, uint256 compounded) = vault.harvestAndCompound();
+        assertEq(harvested, 0);
+        assertEq(compounded, 0);
+        assertEq(vault.totalAssets(), 100e18, "soft-zero must not claim");
     }
 }
