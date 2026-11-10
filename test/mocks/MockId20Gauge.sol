@@ -8,6 +8,7 @@ import {IId20Gauge} from "../../src/vendor/aurove/interfaces/IId20Gauge.sol";
 import {IId20RewardsSink} from "../../src/vendor/aurove/interfaces/IId20RewardsSink.sol";
 
 /// @dev Simplified gauge: activation tracking + settable claimable balances for vault tests.
+///      Optionally reverts `accountState` so Vault's legacy `accountMetadata` fallback can be exercised.
 contract MockId20Gauge is IId20Gauge, IId20RewardsSink {
     using SafeERC20 for IERC20;
 
@@ -16,19 +17,44 @@ contract MockId20Gauge is IId20Gauge, IId20RewardsSink {
     mapping(address => bool) public activated;
     mapping(address => uint256) public claimable;
     uint256 public rewardReserve;
+    /// @dev When true, `accountState` reverts so callers exercise the legacy metadata path.
+    bool public revertAccountState;
 
     error AlreadyActive(address account);
     error NotInitialized(address account);
     error NoRewards();
     error ZeroReceiver();
+    error AccountStateUnavailable();
 
     constructor(IERC20 id20_) {
         id20 = id20_;
     }
 
+    function setRevertAccountState(bool value) external {
+        revertAccountState = value;
+    }
+
     function accountState(address account) external view returns (AccountState memory state) {
+        if (revertAccountState) revert AccountStateUnavailable();
         state.isActivated = activated[account];
         state.claimableReward = claimable[account];
+    }
+
+    /// @dev Legacy testnet gauge shape; `earned` maps to claimableReward.
+    function accountMetadata(address account)
+        external
+        view
+        returns (
+            bool isActive,
+            uint256, /* weight */
+            uint256, /* debt */
+            uint256, /* credit */
+            uint256, /* lent */
+            uint256, /* accruedReward */
+            uint256 earned
+        )
+    {
+        return (activated[account], 0, 0, 0, 0, 0, claimable[account]);
     }
 
     function activate() external {
