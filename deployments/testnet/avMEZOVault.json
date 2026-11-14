@@ -1,5 +1,5 @@
 {
-  "address": "0xe65dA484Ec0820b4E9c8be731D38E27368b4aAC6",
+  "address": "0x2C45a18a23d5bfFf3Fc0c4Bff6376dA1d943373c",
   "abi": [
     {
       "inputs": [
@@ -926,7 +926,7 @@
       "type": "function"
     }
   ],
-  "numDeployments": 7,
+  "numDeployments": 1,
   "linkedData": {
     "contractName": "Vault",
     "sourceName": "src/Vault.sol",

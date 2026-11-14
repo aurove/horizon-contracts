@@ -28,7 +28,10 @@ if [[ "${CONFIRM_CONTRACTS_REDEPLOYMENT:-}" != "YES" ]]; then
   exit 2
 fi
 
-pnpm exec hardhat deploy --reset --tags VaultFactory,Vaults --network "$hub_network"
-pnpm exec hardhat deploy --reset --tags VaultPeers --network "$spoke_network"
-pnpm run "verify:$hub_network"
-pnpm run "verify:$spoke_verify"
+# hardhat-deploy imports zksync-ethers unconditionally; stub via `pnpm hh`.
+pnpm hh deploy --reset --tags VaultFactory,Vaults --network "$hub_network"
+pnpm hh deploy --reset --tags VaultPeers --network "$spoke_network"
+# Explorer indexing can lag; soft-fail so NTT/configure can proceed. Re-run verify later.
+export HORIZON_VERIFY_SOFT_FAIL="${HORIZON_VERIFY_SOFT_FAIL:-YES}"
+pnpm run "verify:$hub_network" || echo "WARNING: $hub_network verify failed (continuing)"
+pnpm run "verify:$spoke_verify" || echo "WARNING: $spoke_verify verify failed (continuing)"

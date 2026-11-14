@@ -122,9 +122,13 @@ const config: HardhatUserConfig = {
     timeout: 300_000,
   },
   etherscan: {
+    // Base / Base Sepolia use Etherscan API V2 (single key). Mezo uses Blockscout via
+    // customChains + per-network keys (Blockscout ignores the key value).
     apiKey: {
       testnet: "empty",
       mainnet: "empty",
+      // hardhat-verify still accepts network keys; Basescan V2 is selected when the
+      // chain is in Etherscan's supported list and a real key is present.
       baseSepolia: process.env.BASESCAN_API_KEY ?? process.env.ETHERSCAN_API_KEY ?? "",
       base: process.env.BASESCAN_API_KEY ?? process.env.ETHERSCAN_API_KEY ?? "",
     },

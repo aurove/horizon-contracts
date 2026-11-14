@@ -1,0 +1,7 @@
+{
+  "name": "zksync-ethers",
+  "version": "5.11.1",
+  "description": "Local stub so hardhat-deploy can load under ethers v6 without zkSync",
+  "main": "index.js",
+  "license": "MIT"
+}

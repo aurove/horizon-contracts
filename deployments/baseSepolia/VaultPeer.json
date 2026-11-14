@@ -501,7 +501,7 @@
       "type": "function"
     }
   ],
-  "numDeployments": 7,
+  "numDeployments": 1,
   "linkedData": {
     "contractName": "VaultPeer",
     "sourceName": "src/VaultPeer.sol"
