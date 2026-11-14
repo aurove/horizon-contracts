@@ -925,7 +925,7 @@
       "type": "function"
     }
   ],
-  "numDeployments": 1,
+  "numDeployments": 2,
   "linkedData": {
     "contractName": "Vault",
     "sourceName": "src/Vault.sol"
