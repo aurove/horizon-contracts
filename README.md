@@ -314,6 +314,6 @@ Optional Hardhat forking: `FORK_ENABLED=1` (and optionally `FORK_RPC_URL` / `FOR
 
 | Package | Path | Role |
 |---------|------|------|
-| `@aurove/horizon-wormhole` | [`../wormhole`](../wormhole) | Wormhole NTT configs, deploy/verify helpers |
+| `@aurove/horizon-wormhole` | [`../wormhole`](../wormhole) · [`docs/ntt-design.md`](../wormhole/docs/ntt-design.md) | Wormhole NTT configs, deploy/verify helpers |
 | `@aurove/horizon-aero` | [`../aero`](../aero) | Base Sepolia Slipstream / CL200 pools vs MUSD |
 | dApp | [`aurove/dapp` (`testnet`)](https://github.com/aurove/dapp/tree/testnet) | Bridge + Base swap UI against these addresses |
