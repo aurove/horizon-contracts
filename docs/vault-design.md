@@ -6,7 +6,7 @@
 | **Date** | 2026-10-18 |
 | **Status** | Implemented (identifiers: `Vault` / `VaultFactory`; no `Horizon*` type names) |
 | **Package** | `@aurove/horizon-contracts` (`horizon/contracts`) |
-| **Scope** | Phase 1 — Vault Infrastructure (no Wormhole NTT / Aerodrome) |
+| **Scope** | Phase 1 — Vault Infrastructure (no Wormhole NTT / Aero) |
 
 ---
 
@@ -14,7 +14,7 @@
 
 Horizon Phase 1 introduces a factory-based ERC-4626 vault layer over eligible Aurove Id20 ERC-20 wrappers. Each vault accepts exactly one Id20 asset (for example managed `avBTCm` or `avMEZOm`), issues standard ERC-20 vault shares, and compounds the vault’s attributable Id20 gauge rewards into its underlying balance so assets-per-share appreciate without diluting existing shareholders.
 
-This design reuses Aurove’s existing reward pipeline end-to-end—`Ledger.claimRebases` → `RewardSink` → `AuroveId20.claimRewards` → `Id20Gauge`—and does **not** invent a parallel reward system or modify core/id20 contracts. Vaults are ordinary immutable contracts deployed by a factory, matching the Id20 package’s deployment model and keeping share-token logic suitable for later Wormhole NTT and Aerodrome integrations.
+This design reuses Aurove’s existing reward pipeline end-to-end—`Ledger.claimRebases` → `RewardSink` → `AuroveId20.claimRewards` → `Id20Gauge`—and does **not** invent a parallel reward system or modify core/id20 contracts. Vaults are ordinary immutable contracts deployed by a factory, matching the Id20 package’s deployment model and keeping share-token logic suitable for later Wormhole NTT and Aero integrations.
 
 ---
 
@@ -33,7 +33,7 @@ Aurove already provides the liquid stack Horizon builds on:
 | Id20Gauge | Instant Q128 rewards in Id20 for activated holders | `packages/id20/src/Id20Gauge.sol`, `base/RewardsBook.sol` |
 | Id20Factory | One immutable wrapper per tranche | `packages/id20/src/aurove/Id20Factory.sol` |
 
-Horizon’s product vision (`horizon/README.md`) extends this stack with ERC-4626 vaults whose shares can later bridge via Wormhole NTT and provide liquidity on Aerodrome. The contracts package (`@aurove/horizon-contracts`) is scaffolded with Foundry + Hardhat mirroring id20 (solc `0.8.28`, viaIR, optimizer runs `200`, OZ `5.4.0`) but currently has no Solidity sources under `src/`.
+Horizon’s product vision (`horizon/README.md`) extends this stack with ERC-4626 vaults whose shares can later bridge via Wormhole NTT and provide liquidity on Aero. The contracts package (`@aurove/horizon-contracts`) is scaffolded with Foundry + Hardhat mirroring id20 (solc `0.8.28`, viaIR, optimizer runs `200`, OZ `5.4.0`) but currently has no Solidity sources under `src/`.
 
 ### Pain points
 
@@ -78,11 +78,11 @@ Concrete interfaces already in production:
 4. Permissionless compounding of the vault’s attributable gauge rewards into vault-held Id20 (assets grow, shares do not).
 5. `totalAssets()` reflects **only** Id20 held by the vault—never unclaimed gauge rewards.
 6. Modular, gas-efficient Solidity in `@aurove/horizon-contracts` with comprehensive Forge (+ optional Hardhat) tests.
-7. Vault shares remain plain ERC-20 suitable for future NTT / Aerodrome (no bridge or DEX code in this phase).
+7. Vault shares remain plain ERC-20 suitable for future NTT / Aero (no bridge or DEX code in this phase).
 
 ### Non-Goals
 
-- Wormhole NTT, Base deployment, or Aerodrome pool integration (Phases 2–3).
+- Wormhole NTT, Base deployment, or Aero pool integration (Phases 2–3).
 - Modifying `packages/core` or `packages/id20` contracts unless a hard blocker appears (none identified).
 - Parallel reward indices, fee switches, pause guardians, or upgradeable vault logic in Phase 1.
 - Auto-claiming Ledger rebases or FreeManagedRewards from Horizon vaults.
@@ -516,7 +516,7 @@ No changes to core or id20 ABIs. Horizon adds:
 
 **Idea:** Mirror core’s `UpgradeableBeacon` + `BeaconProxy` for managers/sinks.
 
-**Trade-offs:** Enables bugfix without remigration, but makes share accounting upgradeable—poor fit for NTT canonical supply and Aerodrome LPs. Id20 deliberately avoided proxies. Rejected for Phase 1.
+**Trade-offs:** Enables bugfix without remigration, but makes share accounting upgradeable—poor fit for NTT canonical supply and Aero LPs. Id20 deliberately avoided proxies. Rejected for Phase 1.
 
 ### 2. Vault claims upstream RewardSink directly (rejected)
 
@@ -622,7 +622,7 @@ No contract code merged until design + PR plan approved.
 
 1. Deploy factory; create two managed vaults only; run the same **idempotent** dead-share seed (skip if `DEAD` already holds shares).
 2. Gate mainnet deploy tags on PR suite including ERC-4626 conformance + fork tests (see PR plan).
-3. No NTT / Aerodrome yet; shares transferable on Mezo only.
+3. No NTT / Aero yet; shares transferable on Mezo only.
 4. Monitor compound bots and exchange-rate monotonicity (absent donations/withdrawals).
 
 ### Feature flags
@@ -699,7 +699,7 @@ Phase-1 engineering defaults are **frozen** (see Key Decisions 11–15). Former 
 
 9. **Do not modify Aurove core or id20 contracts.** Call surfaces: `IAuroveId20.claimRewards` / `rewardSink`; **`IId20RewardsSink.id20`** (not `IId20Gauge`); `IId20Gauge.activate` / `claim` / `accountState`; `IId20.asset` / `id`.
 
-10. **Out of scope: Wormhole NTT and Aerodrome.** Shares are plain ERC-20/4626 so those phases can attach later without redesigning vault accounting.
+10. **Out of scope: Wormhole NTT and Aero.** Shares are plain ERC-20/4626 so those phases can attach later without redesigning vault accounting.
 
 11. **Factory is permissionless** with mandatory multi-check Id20 ABI validation: `rewardSink() != 0`, **`IId20RewardsSink(sink).id20() == asset`**, `IId20.asset() != 0`, `IId20.id() != 0`. Best-effort anti-spoof, not a whitelist.
 
@@ -792,7 +792,7 @@ Incremental PRs against `horizon/contracts` (`@aurove/horizon-contracts`). No co
 - **Title:** `docs(contracts): vault architecture, compound flow, and integrator checklist`
 - **Files/components:** `horizon/contracts/README.md`; copy this design to `horizon/contracts/docs/vault-design.md` with **repo-relative links fixed** for that location
 - **Dependencies:** PR 1–4
-- **Description:** Implementation-aligned docs: create vs getOrCreate (ignore name/symbol), idempotent seed procedure, `IId20RewardsSink.id20` validation, compound vs harvestAndCompound, gauge credit notes, NTT/Aerodrome out of scope.
+- **Description:** Implementation-aligned docs: create vs getOrCreate (ignore name/symbol), idempotent seed procedure, `IId20RewardsSink.id20` validation, compound vs harvestAndCompound, gauge credit notes, NTT/Aero out of scope.
 
 ---
 
