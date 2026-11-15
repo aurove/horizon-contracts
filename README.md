@@ -82,7 +82,7 @@ pnpm build
 pnpm test
 ```
 
-`pnpm build` runs `forge build` then Hardhat compile (TypeChain output under `typechain/`).
+`pnpm build` runs `forge build` then Hardhat compile (TypeChain output under `typechain/`). Always invoke Hardhat via **`pnpm hh`** (preload shim for `zksync-ethers`); bare `hardhat` / `pnpm exec hardhat` can fail to boot.
 
 ### Environment
 
@@ -154,8 +154,8 @@ Deployments are recorded under `deployments/<network>/` via hardhat-deploy.
 Needs `TESTNET_PRIVATE_KEY` and a funded deployer. Managed vaults seed `1e12` Id20 assets and move shares to `0x…dEaD` when the deployer holds enough Id20 (skipped if dead shares already exist).
 
 ```bash
-# From horizon/contracts/
-pnpm exec hardhat deploy --tags VaultFactory,Vaults --network testnet
+# From horizon/contracts/ — use `pnpm hh` (zksync-ethers preload shim), not bare `hardhat`
+pnpm hh deploy --tags VaultFactory,Vaults --network testnet
 
 # Or scoped scripts:
 pnpm deploy:factory --network testnet
@@ -183,7 +183,7 @@ pnpm deploy:peer:testnet
 The peer deployer is a temporary owner. Setting the NTT manager as minter seals mint/burn and renounces ownership in the same transaction (irreversible):
 
 ```bash
-pnpm exec hardhat vault-peer:set-minter \
+pnpm hh vault-peer:set-minter \
   --network baseSepolia \
   --peer <PEER_ADDRESS> \
   --manager <NTT_MANAGER_ADDRESS>
@@ -201,8 +201,11 @@ pnpm deploy:cross-chain:testnet
 Fresh local records + new on-chain deployments (previous addresses remain live):
 
 ```bash
-CONFIRM_CONTRACTS_REDEPLOYMENT=YES pnpm redeploy:cross-chain:testnet
+CONFIRM_HORIZON_DEPLOYMENT=YES CONFIRM_HORIZON_REDEPLOYMENT=YES \
+  pnpm redeploy:cross-chain:testnet
 ```
+
+(`CONFIRM_CONTRACTS_REDEPLOYMENT` / `CONFIRM_NTT_REDEPLOYMENT` are set internally by the root script when those flags are present.)
 
 `HorizonDestinationExecutor` is deployed via Foundry script (`script/DeployHorizonDestinationExecutor.s.sol`); see [`../docs/destination-executor.md`](../docs/destination-executor.md) and `scripts/broadcast-destination-executor.sh`.
 
@@ -303,7 +306,7 @@ Optional Hardhat forking: `FORK_ENABLED=1` (and optionally `FORK_RPC_URL` / `FOR
 
 ## Mainnet / redeploy notes
 
-- Mainnet vault deploy: `pnpm exec hardhat deploy --tags VaultFactory,Vaults --network mainnet` with `MAINNET_PRIVATE_KEY` and `CONFIRM_HORIZON_MAINNET_DEPLOYMENT=YES` where the root workflow requires it.
+- Mainnet vault deploy: `pnpm hh deploy --tags VaultFactory,Vaults --network mainnet` with `MAINNET_PRIVATE_KEY` and `CONFIRM_HORIZON_MAINNET_DEPLOYMENT=YES` where the root workflow requires it.
 - Base mainnet peers: `pnpm deploy:peer:mainnet`.
 - Package reset scripts (`pnpm redeploy:testnet` / `pnpm redeploy:mainnet`) delete **local** deployment records then deploy new contracts. Prior on-chain addresses remain live; only the JSON bookkeeping is replaced.
 - For a complete hub+spoke refresh, prefer `pnpm redeploy:cross-chain:testnet` from `horizon/` so NTT managers and peer minters target the new addresses.

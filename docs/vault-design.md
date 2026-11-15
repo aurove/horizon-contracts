@@ -33,7 +33,7 @@ Aurove already provides the liquid stack Horizon builds on:
 | Id20Gauge | Instant Q128 rewards in Id20 for activated holders | `packages/id20/src/Id20Gauge.sol`, `base/RewardsBook.sol` |
 | Id20Factory | One immutable wrapper per tranche | `packages/id20/src/aurove/Id20Factory.sol` |
 
-Horizon’s product vision (`horizon/README.md`) extends this stack with ERC-4626 vaults whose shares can later bridge via Wormhole NTT and provide liquidity on Aero. The contracts package (`@aurove/horizon-contracts`) is scaffolded with Foundry + Hardhat mirroring id20 (solc `0.8.28`, viaIR, optimizer runs `200`, OZ `5.4.0`) but currently has no Solidity sources under `src/`.
+Horizon’s product vision (`horizon/README.md`) extends this stack with ERC-4626 vaults whose shares can later bridge via Wormhole NTT and provide liquidity on Aero. The contracts package (`@aurove/horizon-contracts`) ships Foundry + Hardhat (solc `0.8.28`, viaIR, optimizer runs `200`, OZ `5.4.0`) with Solidity under `src/` (`Vault.sol`, `VaultFactory.sol`, `VaultPeer.sol`, `HorizonDestinationExecutor.sol`, and interfaces).
 
 ### Pain points
 
@@ -191,22 +191,22 @@ constructor(
     // rewardSink() returns IId20RewardsSink; Id20Gauge also implements IId20Gauge.
     IId20RewardsSink sink = IAuroveId20(address(asset_)).rewardSink();
     if (address(sink) == address(0)) revert InvalidId20Asset(address(asset_));
-    _gauge = IId20Gauge(address(sink));
+    gauge = IId20Gauge(address(sink));
     // Permanent opt-in so deposits accrue reward weight and compound can claim.
-    _gauge.activate();
+    gauge.activate();
 }
 ```
 
 **Why activate in the constructor (and how `msg.sender` works):**
 
 - `Id20Gauge.claim` requires the **claiming account** to be activated (`NotInitialized` otherwise).
-- In the constructor *body*, `msg.sender` is the **factory/deployer**, not the vault. What makes activation correct is that `_gauge.activate()` is an **external call**: the gauge therefore observes `msg.sender == address(this)` (the vault).
+- In the constructor *body*, `msg.sender` is the **factory/deployer**, not the vault. What makes activation correct is that `gauge.activate()` is an **external call**: the gauge therefore observes `msg.sender == address(this)` (the vault).
 - **Do not** have the factory call `gauge.activate()` itself—that would activate the factory address, not the vault.
-- Equivalent safe patterns: call `_gauge.activate()` from the vault constructor (preferred), or a vault self-call such as `Vault(address(this)).ensureActivated()` if activation is ever moved out of the constructor body.
+- Equivalent safe patterns: call `gauge.activate()` from the vault constructor (preferred), or a vault self-call such as `Vault(address(this)).ensureActivated()` if activation is ever moved out of the constructor body.
 - Zero Id20 balance at activation is fine: later transfers update settled units via `beforeId20Transfer`.
 - **Required tests:** after `new Vault(...)` (and after factory `createVault`), assert `gauge.accountState(vault).isActivated == true` and `gauge.accountState(factory).isActivated == false`.
 
-Store `_gauge` as immutable for gas and to avoid trusting a mutable registry.
+Store `gauge` as a **public** immutable (`IId20Gauge public immutable override gauge`) for gas, a stable claim target, and the auto-generated getter required by `IVault`.
 
 #### Asset accounting
 
@@ -277,11 +277,11 @@ function harvestAndCompound()
 
 ```solidity
 function compound() public nonReentrant returns (uint256 compounded) {
-    uint256 claimable = _gauge.accountState(address(this)).claimableReward;
+    uint256 claimable = claimableRewards(); // see dual-ABI view below
     if (claimable == 0) revert NoRewardsToCompound();
 
     // msg.sender inside claim is this vault (external call from vault code).
-    compounded = _gauge.claim(address(this));
+    compounded = gauge.claim(address(this));
     // Id20 is not fee-on-transfer; gauge transfers exactly `claimed`.
     // Optional defense-in-depth balance-delta check may be omitted; if kept,
     // mocks must transfer the same amount they return (see CompoundAmountMismatch).
@@ -303,12 +303,12 @@ function harvestAndCompound()
         harvested = 0;
     }
 
-    uint256 claimable = _gauge.accountState(address(this)).claimableReward;
+    uint256 claimable = claimableRewards(); // dual-ABI; soft-returns 0 if both views fail
     if (claimable == 0) {
         return (harvested, 0); // tolerant keeper helper
     }
 
-    compounded = _gauge.claim(address(this));
+    compounded = gauge.claim(address(this));
     emit Compounded(msg.sender, compounded);
 }
 ```
@@ -341,9 +341,11 @@ ERC-4626 `deposit`/`mint` pull Id20 via `transferFrom`, but anyone may also **do
 
 ```solidity
 function gauge() external view returns (IId20Gauge);
-function claimableRewards() external view returns (uint256); // gauge.accountState(this).claimableReward
+function claimableRewards() external view returns (uint256);
 function previewCompound() external view returns (uint256);  // alias of claimableRewards
 ```
+
+**`claimableRewards` (implemented dual-ABI):** prefer `gauge.accountState(this).claimableReward` (mainnet / current Id20Gauge). If that call is missing or reverts (Mezo testnet legacy gauge), fall back to `accountMetadata(this).earned`. If both fail, soft-return `0` so `harvestAndCompound` stays tolerant instead of reverting the whole keeper call.
 
 Unclaimed rewards **must not** be added into `convertToAssets` / `totalAssets`.
 
@@ -473,7 +475,7 @@ sequenceDiagram
 |------------------|---------|
 | ERC20 balances / supply | Share accounting |
 | ERC4626 `_asset`, decimals cache | Underlying Id20 |
-| `IId20Gauge private immutable _gauge` | Claim target |
+| `IId20Gauge public immutable gauge` | Claim target (+ `IVault.gauge()` getter) |
 | ReentrancyGuard status | Guard |
 
 No reward index storage on the vault—gauge remains source of truth.

@@ -76,7 +76,8 @@ contract HorizonDestinationExecutor is Ownable {
     }
 
     /// @notice Swap exact input via Slipstream `exactInputSingle`.
-    /// @dev Prefers in-contract balance (mint-to-executor custody); pulls the shortfall from `msg.sender`.
+    /// @dev Owner/keeper only. Prefers in-contract balance (mint-to-executor custody); pulls any
+    ///      shortfall from the owner. Unrestricted callers would otherwise drain shared custody.
     function swapExactIn(
         address tokenIn,
         address tokenOut,
@@ -84,7 +85,7 @@ contract HorizonDestinationExecutor is Ownable {
         uint256 minOut,
         address recipient,
         int24 tickSpacing
-    ) external returns (uint256 amountOut) {
+    ) external onlyOwner returns (uint256 amountOut) {
         if (recipient == address(0) || swapRouter == address(0)) revert ZeroAddress();
         if (!isAllowedToken(tokenIn)) revert TokenNotAllowed(tokenIn);
         if (!isAllowedToken(tokenOut)) revert TokenNotAllowed(tokenOut);

@@ -42,23 +42,25 @@ contract HorizonDestinationExecutorTest is Test {
         peer.mint(address(executor), 5_000 ether);
     }
 
-    function test_swapExactIn_pullsFromCaller() public {
-        uint256 amountIn = 1_000 ether;
-        vm.startPrank(user);
-        peer.approve(address(executor), amountIn);
+    function test_swapExactIn_pullsShortfallFromOwner() public {
+        uint256 held = peer.balanceOf(address(executor));
+        uint256 shortfall = 1_000 ether;
+        uint256 amountIn = held + shortfall;
+        peer.mint(address(this), shortfall);
+        peer.approve(address(executor), shortfall);
 
         uint256 out = executor.swapExactIn(
             address(peer), address(musd), amountIn, amountIn, user, TICK_SPACING
         );
-        vm.stopPrank();
 
         assertEq(out, amountIn);
         assertEq(musd.balanceOf(user), amountIn);
+        assertEq(peer.balanceOf(address(executor)), 0);
     }
 
     function test_swapExactIn_usesInContractBalance() public {
         uint256 amountIn = 2_000 ether;
-        // No approve from user — spend mint-to-executor balance.
+        // Owner spends mint-to-executor balance (no pull from caller).
         uint256 out = executor.swapExactIn(
             address(peer), address(musd), amountIn, amountIn, user, TICK_SPACING
         );
@@ -66,6 +68,13 @@ contract HorizonDestinationExecutorTest is Test {
         assertEq(out, amountIn);
         assertEq(musd.balanceOf(user), amountIn);
         assertEq(peer.balanceOf(address(executor)), 5_000 ether - amountIn);
+    }
+
+    function test_swapExactIn_revertsForNonOwner() public {
+        uint256 amountIn = 100 ether;
+        vm.prank(user);
+        vm.expectRevert();
+        executor.swapExactIn(address(peer), address(musd), amountIn, 1, user, TICK_SPACING);
     }
 
     function test_mintLp_revertsNotImplemented() public {
