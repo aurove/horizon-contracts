@@ -266,6 +266,8 @@ Factory-created vaults are verified on Sourcify. Mezo Blockscout may still repor
 
 Peer minters are sealed to the spoke NTT managers; peer ownership is renounced after handoff.
 
+Pre–Wave 2 Base peers (`avBTCv` `0xb25912d6…D132`, `avMEZOv` `0x2E9eAa58…F855`) are obsolete. The dApp bridge, swap, and NTT configs must use the Wave 2 peer addresses above only.
+
 ### Related Wormhole NTT (sibling package)
 
 NTT managers/transceivers live under [`../wormhole`](../wormhole) (`wormhole/vaults/*/testnet/deployment.json`). Summary for Wave 2 testnet:
